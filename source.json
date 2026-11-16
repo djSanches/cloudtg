@@ -1,0 +1,41 @@
+{
+  "name": "Voryn Labs",
+  "identifier": "com.tinyredphoenix.Cloudified.source",
+  "subtitle": "Independent apps for iPhone",
+  "description": "Unsigned Voryn Labs releases for compatible sideloading tools. Sign with your own certificate or import into LiveContainer.",
+  "iconURL": "https://raw.githubusercontent.com/Voryn-Labs/Cloudified/main/App/Resources/Assets.xcassets/AppIcon.appiconset/CloudifiedIcon.png",
+  "sourceURL": "https://raw.githubusercontent.com/Voryn-Labs/Cloudified/main/source.json",
+  "tintColor": "#096E61",
+  "apps": [
+    {
+      "name": "Cloudified",
+      "bundleIdentifier": "com.vorynlabs.cloudified",
+      "developerName": "Voryn Labs",
+      "subtitle": "Original photo and video backup",
+      "localizedDescription": "Back up original photos and videos to Google Photos and Telegram with independent queues, progress and recovery. An unsigned Voryn Labs app; sign with your own certificate or import into LiveContainer.",
+      "iconURL": "https://raw.githubusercontent.com/Voryn-Labs/Cloudified/main/App/Resources/Assets.xcassets/AppIcon.appiconset/CloudifiedIcon.png",
+      "tintColor": "#096E61",
+      "category": "photo-video",
+      "versions": [
+        {
+          "version": "1.0",
+          "buildVersion": "40",
+          "marketingVersion": "1.0 (40)",
+          "date": "2026-11-12T04:06:05Z",
+          "localizedDescription": "Latest stable release. This stable release carries forward the Telegram\nreliability correction from preview0.81 and the album exclusions and Keep Awake\nredesign from0.8.\n\n- Filter unrelated Telegram chat/file updates before the bounded native queue,\n  preserving owned completion/failure events and preventing irrelevant bursts from\n  filling the queue.\n- Gate a broken Telegram input stream once and request recovery; keep Google uploads\n  independent. Distinguish local connection capacity from Telegram server rejection.\n- Preserve original media, upload profile, retries, receipts and protected native\n  files. Unknown outcomes still require verification before another send.\n- Retain separate provider album exclusions and the redesigned Keep Awake screen.\n\nUpdate in place with the same signing identity/container. This release advances the\ndatabase to schema7; do not downgrade its container to0.8 or earlier.",
+          "downloadURL": "https://github.com/Voryn-Labs/Cloudified/releases/download/build-43150178566/Cloudified-unsigned.ipa",
+          "size": 17986115,
+          "sha256": "6525396e7a630a31b4053cd4b10d14e5b60bd32ea0501705bfed0eacd2371c2a",
+          "minOSVersion": "26.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSPhotoLibraryUsageDescription": "Cloudified requires photo library access to back up original quality photos and videos to Google Photos and Telegram."
+        }
+      }
+    }
+  ],
+  "news": []
+}
