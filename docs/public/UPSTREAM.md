@@ -1,0 +1,74 @@
+# Updating upstream dependencies
+
+[Back to Cloudified](../../README.md)
+
+Cloudified uses small integration boundaries rather than tracking moving branches:
+
+| Dependency | Boundary | Source of truth |
+| --- | --- | --- |
+| PhotosBackup | Adapted Google client/authentication files behind GooglePhotosClientSession | [pins](../../dependencies/pins.json), [file provenance](../../dependencies/google-vendor.json) |
+| gpmc | Read-only library wire adaptation; no Python runtime | [exact metadata provenance](../../dependencies/google-library-vendor.json), [MIT notice](../../licenses/gpmc/LICENSE.txt) |
+| TDLib | Packages/CTDLib C module, Swift bridge and session | [pins](../../dependencies/pins.json), [native provenance](../../dependencies/tdlib-vendor.json) |
+| OpenSSL | TDLib's pinned native build closure | pins.json, tdlib-vendor.json and scripts/assemble_tdlib.sh |
+
+Google and Telegram adapters retain Cloudified's queue, receipt, original-quality
+and recovery contracts. Replacing their folders with an upstream checkout would
+discard those adaptations. A Git submodule alone would not merge them safely.
+
+## Prepare a review
+
+Python 3 and Git suffice. This manual tool never changes application code, pins or
+native artifacts, executes upstream code, dispatches builds, or installs packages.
+Find a candidate, then explicitly select its full commit:
+
+```sh
+python3 scripts/review_upstream.py photosbackup --latest
+python3 scripts/review_upstream.py photosbackup --revision FULL_40_CHARACTER_COMMIT
+python3 scripts/review_upstream.py tdlib --latest
+python3 scripts/review_upstream.py tdlib --revision FULL_40_CHARACTER_COMMIT
+```
+
+Each review creates a fresh ignored `build/upstream-review/` directory. It fetches
+selected text files at the exact base/candidate revisions, checks known base
+digests and records hashes. `diffs/` contains upstream changes; `current/` captures
+our adaptations; `proposed/` contains three-way merges. `review.json` records
+conflicts and whether preparation finished. Missing/renamed files stop preparation;
+an incomplete report or conflict markers must never be applied. `--latest` only
+prints the moving HEAD as a candidate; it does not advance a dependency.
+
+## Apply only after review
+
+1. Review the full upstream comparison/releases, licensing and service/API changes.
+   The downloaded subset is a starting point, not an exhaustive dependency audit.
+2. Resolve proposed merges deliberately. A conflict-free merge does not establish
+   correctness, especially for authentication, request fields and recovery.
+3. Change exact pins and matching provenance together. Record source/adapted hashes
+   and reasons; retain all upstream copyright and license notices. For TDLib update
+   both header copies, the build script's exact TDLib/OpenSSL pins, native closure
+   metadata and bridge assumptions as needed. Never advance only pins.json.
+4. Run [source checks and affected regressions](BUILDING.md). For Google review
+   authentication, duplicate checks and original upload fields; for TDLib review
+   JSON schema, ownership, terminal sends and ABI/link behavior. Both providers
+   must keep independent failure handling.
+5. Inspect the native cache fingerprint after any TDLib/recipe change. Rebuild
+   native dependencies for the new inputs; do not relabel an old cached archive.
+   Request a manual integrated build and verify affected behavior on device.
+
+No dependency is updated automatically and there is no scheduled workflow or extra
+Actions artifact storage. Submit reviewed changes as an ordinary pull request.
+gotohp is credited on GitHub as an additional reference, not a runtime dependency.
+
+## Reviewed adapted-file digests
+
+Run `python3 scripts/check_dependencies.py` after any adapted Google source or
+TDLib header change. CI runs the same check before its macOS job. A mismatch must
+be reviewed against source history before deliberately updating the manifest's
+`vendoredSha256`; do not regenerate digests just to silence a failure. This also
+checks source pins against native assembly and embedded license provenance.
+It does not fetch or advance an upstream revision.
+
+The 0.6 metadata adaptation is pinned separately to gpmc
+`94b1b267ca6819da542d4330a7dd216747eb0437`. It does not advance PhotosBackup or
+TDLib. Review this wire/parser manually against its manifest; the existing review
+helper does not yet prepare gpmc merges. Captured account and promotion cursor
+fields are removed; runtime identity and sync cursors come from the linked account.
