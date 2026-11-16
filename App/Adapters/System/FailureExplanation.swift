@@ -1,0 +1,132 @@
+import Foundation
+import CloudifiedCore
+
+enum FailureExplanation {
+    static func message(_ failure: SafeFailure) -> String {
+        if failure.domain == .fileSystem {
+            switch failure.cause {
+            case .storageUnavailable:
+                return "Cloudified could not prepare its local app storage\(failure.code.map { " (error \($0))" } ?? ""). Close and reopen the app, then retry. If it persists, export diagnostics."
+            case .storagePathConflict:
+                return "Cloudified found a file or redirected path where a local storage folder is required. Setup stopped to protect existing data. Export diagnostics; do not delete the app's database."
+            case .permissionDenied:
+                return "iOS denied access to Cloudified's local storage\(failure.code.map { " (error \($0))" } ?? ""). Unlock the iPhone, reopen the app and retry. This is a local storage error."
+            default: break
+            }
+        }
+        switch failure.cause {
+        case .databaseKeyUnavailable: return "Cloudified cannot unlock its local Telegram connection data. Try the original signing identity first. Settings → Telegram offers a local connection reset only when no unresolved uploads need that data. Your uploaded channel files are unchanged."
+        case .nativeCapacityExceeded: return "Cloudified's local Telegram connection overloaded. Close Cloudified from the app switcher and reopen it to retry. Existing upload records and files stay protected; other destinations can continue."
+        case .nativeResponseInvalid: return "Cloudified could not decode a Telegram response. This is a connection protocol error, not an unsupported photo format. Protected uploads require recovery before another send."
+        case .nativeResponseLimit: return "A Telegram response exceeded Cloudified's decoder capacity. Existing uploads remain protected while the connection recovers. Export diagnostics if this repeats."
+        case .identityUnverified: return "Google could not verify this signed-in account\(failure.code.map { " (HTTP \($0))" } ?? ""). Open Google Photos in Settings to retry verification or sign in again."
+        case .pairingUnverified: return "Google could not verify this Live Photo as one paired item. Choose a Live Photo fallback in Settings, or retry this item in Activity. Accepted components stay protected from duplicate uploads."
+        case .pendingSendUnmatched: return "Telegram has not provided a verifiable result for this file. It is not counted as saved. Its original stays protected while other eligible files continue."
+        case .privateChannelRequired: return "Telegram requires a channel you own, with no public username and auto-delete turned off."
+        case .accountChanged: return "The account or channel differs from this upload's verified destination. Reconnect the original mapping."
+        case .loginRequired: return "Your sign-in is missing or no longer valid. Open this destination in Settings and sign in again."
+        case .permissionDenied: return "Access was denied. Check Photos permission or the destination's permissions."
+        case .insufficientSpace: return "More device space is needed to stage the original safely. Other admissible assets can continue."
+        case .formatRejected: return "The original format or resource layout is unsupported by this destination. No quality conversion was made."
+        case .contentChanged: return "This asset changed while its original was being prepared. Refresh the library and try again."
+        case .exclusionUnavailable: return "An excluded album is unavailable. Open Settings → Excluded albums to remove that rule, or restore Photos access. New uploads to this destination wait until its exclusions can be checked."
+        case .sourceMissing: return "The original asset is no longer available in the accessible Photos library."
+        case .interrupted: return "Work was interrupted. Uncertain sends are checked before another upload."
+        case .serverRateLimit: return "The destination requested a delay. Its retry time is retained; the other destination can continue."
+        case .deadlineExceeded: return "The request timed out. A missing acknowledgement is checked before another send."
+        case .offline: return "Waiting for a network connection. A network path does not guarantee internet access."
+        case .lowDataMode: return "Waiting for Low Data Mode to be turned off for this network."
+        case .wifiRequired: return "Waiting for Wi-Fi under your network preference."
+        case .thermalPressure: return "Waiting for the device to cool before preparing more originals."
+        case .lowPowerMode: return "Paused while Low Power Mode is on, as set in Settings."
+        case .backgroundRestricted: return "Background execution is unavailable. Open Cloudified to continue this backup."
+        case .backgroundExpired: return "Background processing ended or was stopped from its system activity. Submitted Google files remain protected; reopen Cloudified to continue."
+        case .operationBusy: return "Cloudified is finishing another account or recovery action. Try again when it finishes."
+        case .commitRecoveryPending: return "The file reached Google's upload server, but saving it to the library has not been confirmed. Cloudified is retrying only its saved receipt; the photo or video is not sent again."
+        case .commitRecoveryExhausted: return "Google did not confirm this file after three finalization attempts. It is not counted as saved. This item needs attention; other files can continue."
+        case .possibleOriginalMatch: return "Google may already have this original. This file is waiting for your review; other files can continue. It has not been counted as saved."
+        case .googleIndexPending: return "Checking Google's library metadata before deciding whether this original needs uploading. Other files and Telegram can continue."
+        case .outcomeUnknown where failure.domain == .google: return "Google has not confirmed this upload. Cloudified checks again with increasing delays, then holds this item for review instead of checking endlessly. Other eligible files can continue."
+        case .outcomeUnknown: return "The destination has not confirmed whether this file was saved. Cloudified checks the existing upload before sending another copy."
+        case .incompleteHistory: return "The destination's file history could not be fully checked. Cloudified needs a verified result before sending this file again."
+        case .persistenceFailed: return "The local ledger could not persist a change. Saved status cannot be confirmed."
+        case .invalidContract: return "An internal consistency check failed. Export the safe diagnostics for investigation."
+        case .quotaExceeded: return "The destination reports a storage limit. Check its account status."
+        case .providerRejected: return "The destination rejected this operation\(failure.code.map { " (code \($0), \(failure.domain.rawValue))" } ?? ""). Open Logs for the failed request."
+        case .disabled: return "This destination is disabled; its backlog is retained."
+        case .paused: return "Backup is paused."
+        case .storageUnavailable, .storagePathConflict: return "Local app storage is unavailable. Export diagnostics before changing stored data."
+        case .setupUnavailable: return "Cloudified could not initialize this connection. This is an app setup failure, not an unconfirmed upload. Open Logs for the startup error."
+        case .initializationFailed: return "Telegram session initialization failed. Retry starting Telegram; Logs contain the failed setup stage and native error code."
+        case .verificationFailed: return "Browser sign-in completed, but the app could not verify the Photos connection. Retry verification or check Logs for the failed stage."
+        case .networkRequestFailed: return "A network request failed\(failure.code.map { " (code \($0))" } ?? ""). This does not prove the phone is offline. Check Logs for the failed stage."
+        case .unknown: return "The cause is unknown (\(failure.category.rawValue), \(failure.domain.rawValue)\(failure.code.map { ", code \($0)" } ?? ""))."
+        case .phoneNumberInvalid: return "Enter the full international phone number, starting with + and the country code. Spaces and brackets are allowed. Telegram must accept this number before sending a code."
+        case .phoneNumberBanned: return "Telegram reports that this phone number is banned. This cannot be fixed by retrying Cloudified."
+        case .applicationCredentialsRejected: return "Telegram rejected the API application credentials. Check the API ID and hash together in Settings; Logs contain the exact safe rejection name."
+        case .authenticationRejected: return "Telegram rejected this sign-in step. Check the phone number, enter the latest code or check your two-step verification password in Telegram account settings."
+        }
+    }
+    static func destinationAttention(_ failure: SafeFailure) -> ProviderCardState.Attention? {
+        if failure.cause == .exclusionUnavailable { return nil }
+        if [.setupUnavailable, .initializationFailed, .databaseKeyUnavailable, .nativeResponseInvalid, .nativeResponseLimit, .nativeCapacityExceeded].contains(failure.cause) { return .connection }
+        if [.photos, .fileSystem, .sqlite].contains(failure.domain) { return nil }
+        if failure.cause == .loginRequired || failure.cause == .identityUnverified { return .signIn }
+        switch failure.category {
+        case .rateLimit: return .rateLimit
+        case .quota: return .storage
+        case .authentication, .accessDenied: return .account
+        default: return nil
+        }
+    }
+    static func destinationMessage(_ failure: SafeFailure, provider: Provider, resumeAt: Date?) -> String {
+        let scope = "Only \(provider.displayName) is paused. "
+        if failure.category == .rateLimit {
+            if let resumeAt {
+                return scope + "\(provider.displayName) has temporarily limited requests. Cloudified will retry no earlier than \(resumeAt.formatted(date: .abbreviated, time: .shortened)); leave backup enabled. Signing in again will not remove this limit."
+            }
+            return scope + "\(provider.displayName) has temporarily limited requests without giving a retry time. Wait before retrying in account settings. Signing in again will not remove this limit."
+        }
+        if failure.cause == .loginRequired {
+            return scope + "Your sign-in is missing or no longer valid. Open this account and sign in again to continue. Existing uploads stay saved."
+        }
+        if failure.cause == .identityUnverified {
+            return scope + "Cloudified could not verify your Google account. Open the account, retry verification or sign in again."
+        }
+        if failure.cause == .privateChannelRequired { return scope + message(failure) + " Review the channel in Telegram account settings." }
+        if failure.category == .accessDenied {
+            return scope + "This account does not have the required access. Review its permissions and connected destination in account settings."
+        }
+        if failure.category == .quota {
+            return scope + "The account reports a storage limit. Free space or review its storage plan before retrying."
+        }
+        return scope + message(failure)
+    }
+    static func remedy(_ failure: SafeFailure?) -> String {
+        guard let failure else { return "Check the pending operation's status before retrying." }
+        if failure.domain == .fileSystem && failure.cause == .permissionDenied {
+            return "Unlock the iPhone, reopen Cloudified and retry. Check the local storage error code."
+        }
+        switch failure.cause {
+        case .databaseKeyUnavailable: return "Restore the original signing identity or review Reset local Telegram connection in Settings → Telegram. If protected uploads block reset, keep the app data and share diagnostics."
+        case .loginRequired, .identityUnverified, .accountChanged: return "Reconnect the correct destination in Settings."
+        case .outcomeUnknown where failure.domain == .google: return "Use Verify upload on this item to request another bounded verification cycle. This does not force a resend. If it remains unresolved, share diagnostics; keep the same account and app data."
+        case .pendingSendUnmatched, .outcomeUnknown, .incompleteHistory: return "Use Verify upload with the same account and channel. If it stays waiting, upload diagnostics from Report a problem. Deleting or relinking the app does not prove the file was saved."
+        case .insufficientSpace: return "Free device space, then retry this asset."
+        case .permissionDenied, .sourceMissing: return "Check Photos access and availability of the original."
+        case .commitRecoveryPending: return "Receipt-only recovery runs automatically while eligible. Saved increases only after Google returns a valid media key or an exact hash check confirms the file."
+        case .commitRecoveryExhausted: return "Open this item's Verify upload action to allow another bounded receipt-only recovery cycle. Keep the same Google account and app data; this error does not prove the file is absent."
+        case .possibleOriginalMatch: return "Compare the existing Google photo. Check again to repeat verification, or explicitly choose Upload original anyway if you accept a possible duplicate."
+        case .googleIndexPending: return "Library checking continues in bounded pages; no photo is downloaded from Google."
+        case .pairingUnverified: return "Select an explicit Google Live Photo policy."
+        case .serverRateLimit, .offline, .wifiRequired: return "Wait for the listed retry time or an allowed network."
+        case .storageUnavailable: return "Unlock the iPhone, reopen Cloudified and retry. Export diagnostics if setup still fails."
+        case .storagePathConflict: return "Export diagnostics for investigation. Keep existing local data intact."
+        default: return "Review the safe error code and export diagnostics if the error persists."
+        }
+    }
+    static func requiresReconciliation(_ failure: SafeFailure?) -> Bool {
+        guard let failure else { return false }
+        return [.outcomeUnknown, .pendingSendUnmatched, .incompleteHistory, .commitRecoveryPending, .commitRecoveryExhausted].contains(failure.cause)
+    }
+}
